@@ -1,7 +1,7 @@
 #ifndef EOS_THREAD_H_
 #define EOS_THREAD_H_
 
-EOSstatus_t * EOSstatus;
+#include <stdint.h>
 
 typedef enum {
 	HIGHEST_PRIORITY = 0,
@@ -22,24 +22,24 @@ typedef enum {
 typedef struct EOSthread_t {
 	void (*funct_ptr)();
 	uint32_t * stackPtrAddr;
-	EOStaskPriority priority;
+	EOStaskPriority_e priority;
 	uint32_t delay;
 	struct EOSthread * next;
-};
+}EOSthread_t;
 
 typedef struct {
-	EOSthread * runningThread;
+	EOSthread_t * runningThread;
 	uint8_t threadCount;
 	uint32_t sysCount;
-	EOSthread * priorityArray[6];
-	EOSthread * sleepingHead;
+	EOSthread_t * priorityArray[6];
+	EOSthread_t * sleepingHead;
 	uint32_t * initialMSP;
 	//mutexHead
 	//semaphoreHead
 
 }EOSstatus_t;
 
-void EOScreateThread (void (*funct_ptr)(), EOStaskPriority priority);
+void EOScreateThread (void (*funct_ptr)(), EOStaskPriority_e priority);
 
 
 #endif /* EOS_THREAD_H_ */
