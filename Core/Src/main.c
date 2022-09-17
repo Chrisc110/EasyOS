@@ -22,7 +22,9 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-
+#include "cmsis_os2.h"
+#include "stm32g4xx_it.h"
+#include <string.h>
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -51,7 +53,8 @@ void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
 static void MX_LPUART1_UART_Init(void);
 /* USER CODE BEGIN PFP */
-
+void thread1(void *);
+void thread2(void *);
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -89,7 +92,12 @@ int main(void)
   MX_GPIO_Init();
   MX_LPUART1_UART_Init();
   /* USER CODE BEGIN 2 */
+  osKernelInitialize();
 
+  osThreadNew(thread1, NULL, NULL);
+  osThreadNew(thread2, NULL, NULL);
+
+  osKernelStart();
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -237,6 +245,22 @@ static void MX_GPIO_Init(void)
 }
 
 /* USER CODE BEGIN 4 */
+
+void thread1(void* args) {
+    char *msg = "thread1";
+    while (1) {
+        HAL_UART_Transmit(&hlpuart1, (uint8_t*)msg, strlen(msg), HAL_MAX_DELAY);
+        PendSV_Handler();
+    }
+}
+
+void thread2(void* args) {
+    char *msg = "thread2";
+    while (1) {
+        HAL_UART_Transmit(&hlpuart1, (uint8_t*)msg, strlen(msg), HAL_MAX_DELAY);
+        PendSV_Handler();
+    }
+}
 
 /* USER CODE END 4 */
 
