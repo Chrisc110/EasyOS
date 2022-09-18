@@ -249,7 +249,7 @@ static void MX_GPIO_Init(void)
 /* USER CODE BEGIN 4 */
 
 void thread1(void* args) {
-    char *msg = "thread1\n";
+    char *msg = "thread1\n\r";
     while (1) {
         HAL_UART_Transmit(&hlpuart1, (uint8_t*)msg, strlen(msg), HAL_MAX_DELAY);
         PendSV_Handler();
@@ -257,7 +257,7 @@ void thread1(void* args) {
 }
 
 void thread2(void* args) {
-    char *msg = "thread2\n";
+    char *msg = "thread2\n\r";
     while (1) {
         HAL_UART_Transmit(&hlpuart1, (uint8_t*)msg, strlen(msg), HAL_MAX_DELAY);
         PendSV_Handler();
