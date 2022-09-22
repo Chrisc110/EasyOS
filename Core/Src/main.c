@@ -25,6 +25,7 @@
 #include "cmsis_os2.h"
 #include "stm32g4xx_it.h"
 #include <string.h>
+#include "EOS_thread.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -53,6 +54,19 @@ void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
 static void MX_LPUART1_UART_Init(void);
 /* USER CODE BEGIN PFP */
+
+#ifdef __GNUC__
+#define PUTCHAR_PROTOTYPE int __io_putchar(int ch)
+#else
+#define PUTCHAR_PROTOTYPE int fputc(int ch, FILE *f)
+#endif
+
+PUTCHAR_PROTOTYPE
+{
+  HAL_UART_Transmit(&hlpuart1, (uint8_t *)&ch, 1, HAL_MAX_DELAY);
+  return ch;
+}
+
 void thread1(void *);
 void thread2(void *);
 /* USER CODE END PFP */
@@ -92,6 +106,9 @@ int main(void)
   MX_GPIO_Init();
   MX_LPUART1_UART_Init();
   /* USER CODE BEGIN 2 */
+
+  printf("About to start Kernel!");
+
 
   osKernelInitialize();
 
@@ -252,7 +269,7 @@ void thread1(void* args) {
     char *msg = "thread1\n\r";
     while (1) {
         HAL_UART_Transmit(&hlpuart1, (uint8_t*)msg, strlen(msg), HAL_MAX_DELAY);
-        PendSV_Handler();
+        contextSwitch();
     }
 }
 
@@ -260,7 +277,7 @@ void thread2(void* args) {
     char *msg = "thread2\n\r";
     while (1) {
         HAL_UART_Transmit(&hlpuart1, (uint8_t*)msg, strlen(msg), HAL_MAX_DELAY);
-        PendSV_Handler();
+        contextSwitch();
     }
 }
 
