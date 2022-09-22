@@ -171,7 +171,25 @@ void DebugMon_Handler(void)
 void PendSV_Handler(void)
 {
   /* USER CODE BEGIN PendSV_IRQn 0 */
-
+	__ASM volatile
+	        (
+	        "       mrs r0, psp                     \n"
+	        "                                       \n"
+	        "       stmdb r0!, {r4-r11}             \n"
+	        "                                       \n"
+	        "       msr psp, r0                     \n"
+	        "                                       \n"
+	        "       bl setNewPSP           			\n"
+	    	"                                       \n"
+	        "		mov LR, #0xFFFFFFFD				\n"
+	    	"       mrs r0, psp                     \n"
+	        "                                       \n"
+	        "       ldmia r0!, {r4-r11}             \n"
+	        "                                       \n"
+	        "       msr psp, r0                     \n"
+	        "                                       \n"
+	        "       bx lr                           \n"
+	    );
   /* USER CODE END PendSV_IRQn 0 */
   /* USER CODE BEGIN PendSV_IRQn 1 */
 
