@@ -106,4 +106,3 @@ void setNewPSP(void){
 	threadIndex = (threadIndex + 1) % threadCount;
 
 	__set_PSP((uint32_t)(threadArr[threadIndex]->stackPointer));
-}
