@@ -1,121 +1,143 @@
 #include "EOS_thread.h"
 #include "cmsis_os2.h"
 
-eTCB *threadArr[10];
-uint32_t * initMSP;
-uint8_t threadCount = 0;
-uint8_t threadIndex = 0;
-uint8_t counter = 0;
+//Initializing the thread status structure
+CBOS_status_t CBOS_threadStatus = {
+    0,
+    0,
+    {0}
+};
 
-static int easyHeap[5000];
-uint32_t heapIndex = 5000-1;
-
-void contextSwitch(void)
+void trigger_pendsv(void)
 {
-	volatile uint32_t *icsr = (void*)0xE000ED04; //Interrupt Control/Status Vector
-	*icsr = 0x1<<28; //tell the chip to do the pendsv by writing 1 to the PDNSVSET bit
+    //Determine whether a switch is even necessary – if there is only one task running, why bother?
+    if (CBOS_threadStatus.thread_count==1)
+        return;
 
-	//flush things
-	__asm("isb"); //This just prevents other things in the pipeline from running before we return
+    //Trigger the PendSV interrupt
+    volatile uint32_t *icsr = (void*)0xE000ED04; //Interrupt Control/Status Vector
+    *icsr = 0x1<<28; //tell the chip to do the pendsv by writing 1 to the PDNSVSET bit
 
-	return;
+    //flush things
+        __asm("isb"); //This just prevents other things in the pipeline from running before we return
+
+    return;
 }
 
-osThreadId_t osThreadNew (osThreadFunc_t func, void *argument, const osThreadAttr_t *attr)
+void CBOS_create_thread(void (*funct_ptr)())
 {
-	eTCB * newThread = (eTCB*)&easyHeap[heapIndex];
-	heapIndex -= sizeof(eTCB);
-	threadArr[threadCount] = newThread;
-	threadCount++;
-	//newThread->stackPointer = initMSP - THREAD_STACK_SIZE * threadCount;
-	newThread->stackPointer = (uint32_t*)&easyHeap[heapIndex];
-	heapIndex -= THREAD_STACK_SIZE;
 
-	*(newThread->stackPointer) = 1<<24;
-	(newThread->stackPointer)--;
+    //increment thread count
+    CBOS_threadStatus.thread_count++;
 
-	*(newThread->stackPointer) = (uint32_t)(func);
-	(newThread->stackPointer)--;
+    //update structure with function pointer
+    CBOS_threadStatus.threadInfo[CBOS_threadStatus.thread_count - 1].funct_ptr = funct_ptr;
 
-	*(newThread->stackPointer) = 0xE;
-	newThread->stackPointer--;
+    //update structure with stack pointer
+    CBOS_threadStatus.threadInfo[CBOS_threadStatus.thread_count - 1].stackPtr_address = CBOS_threadStatus.initial_MSP_addr - THREAD_STACK_SIZE * CBOS_threadStatus.thread_count;
 
-	*newThread->stackPointer = 0xD;
-	newThread->stackPointer--;
+    //make a copy of stack pointer for the thread we just made
+    uint32_t * pspCopy = (uint32_t*)CBOS_threadStatus.threadInfo[CBOS_threadStatus.thread_count - 1].stackPtr_address;
 
-	*newThread->stackPointer = 0xC;
-	newThread->stackPointer--;
+    //Ensure the 24th bit is set
+    *pspCopy = 1 << 24;
+    pspCopy--;
 
-	*newThread->stackPointer = 0xB;
-	newThread->stackPointer--;
+    //store the function pointer address
+    *pspCopy = (uint32_t)(CBOS_threadStatus.threadInfo[CBOS_threadStatus.thread_count - 1].funct_ptr);
+    pspCopy--;
 
-	*newThread->stackPointer = 0xA;
-	newThread->stackPointer--;
+    //Setting LR, R12, R3, R2, R1, R0 to something obvious
+    *pspCopy = 0xE;
+    pspCopy--;
 
-	*newThread->stackPointer = 0x9;
-	newThread->stackPointer--;
+    *pspCopy = 0xD;
+    pspCopy--;
 
-	*newThread->stackPointer = 0xB;
-	newThread->stackPointer--;
+    *pspCopy = 0xC;
+    pspCopy--;
 
-	*newThread->stackPointer = 0xA;
-	newThread->stackPointer--;
+    *pspCopy = 0xB;
+    pspCopy--;
 
-	*newThread->stackPointer = 0x9;
-	newThread->stackPointer--;
+    *pspCopy = 0xA;
+    pspCopy--;
 
-	*newThread->stackPointer = 0x8;
-	newThread->stackPointer--;
+    *pspCopy = 0x9;
+    pspCopy--;
 
-	*newThread->stackPointer = 0x7;
-	newThread->stackPointer--;
+    //set R11
+    *pspCopy = 0xB;
+    pspCopy--;
 
-	*newThread->stackPointer = 0x6;
-	newThread->stackPointer--;
+    //set R10
+    *pspCopy = 0xA;
+    pspCopy--;
 
-	*newThread->stackPointer = 0x5;
-	newThread->stackPointer--;
+    //set R9
+    *pspCopy = 0x9;
+    pspCopy--;
 
-	*newThread->stackPointer = 0x4;
+    //Set R8
+    *pspCopy = 0x8;
+    pspCopy--;
 
+     //Set R7
+    *pspCopy = 0x7;
+    pspCopy--;
 
-	return NULL;
+    //Set R6
+    *pspCopy = 0x6;
+    pspCopy--;
+
+    //Set R5
+    *pspCopy = 0x5;
+    pspCopy--;
+
+    //Set R4
+    *pspCopy = 0x4;
+
+    //Setting the thread's stack pointer to the copy that was decremented
+    CBOS_threadStatus.threadInfo[CBOS_threadStatus.thread_count - 1].stackPtr_address = (uint32_t)pspCopy;
 }
 
-osStatus_t osKernelInitialize(void) {
-
-//    memset(eHepa, HEAP_INITIAL, HEAP_SIZE);
-    *(uint32_t volatile *)0xE000ED20 |= (0xFFU << 16);
-
-    initMSP = (uint32_t*)0;
-
-    return osOK;
-
-}
-
-osStatus_t osKernelStart(void) {
-
+void CBOS_kernel_start(void){
     __set_CONTROL(1<<1);
-    __set_PSP((uint32_t)(threadArr[threadIndex]->stackPointer) + 14*4);
 
-    contextSwitch();
+    /*Setting PSP to first thread address + 14 * 4 becuase
+        when the thread was created, it was initially ready to be run, but
+        now, by setting its PSP then forcing a trigger_pendsv() we pushing
+        instead of popping, so we are setting an offset to ensure we are back
+        where we should be
+    */
+    __set_PSP(CBOS_threadStatus.threadInfo[0].stackPtr_address + 14 *4);
 
-    return osOK;
+    //Start the first switch
+    //Trigger the PendSV interrupt
+        volatile uint32_t *icsr = (void*)0xE000ED04; //Interrupt Control/Status Vector
+        *icsr = 0x1<<28; //tell the chip to do the pendsv by writing 1 to the PDNSVSET bit
 
+        //flush things
+            __asm("isb"); //This just prevents other things in the pipeline from running before we return}
 }
 
-void setNewPSP(void){
-	threadArr[threadIndex]->stackPointer = (uint32_t*)__get_PSP();
+void set_PSP_new_stackPtr(){
+    printf("Switching Context!\n\r");
+    /*-Saving the current (about to switch out of) thread PSP
+        -we do not have to save an offset bec by saving it here
+            it has the offset included
+    */
+    CBOS_threadStatus.threadInfo[CBOS_threadStatus.current_thread].stackPtr_address =__get_PSP();
 
-	threadIndex = (threadIndex + 1) % threadCount;
-	if (threadIndex == 0)
-	{
-	    threadIndex = 1;
-	}
-	printf("thread count: %i\n\r", threadIndex);
-	printf("Counter: %i\n\r", counter);
-	counter++;
+    //Incrementing the current thread index by 1 to ready the next thread
+    //We are currently doing a pure round robin scheduler
+    CBOS_threadStatus.current_thread = (CBOS_threadStatus.current_thread+1)%CBOS_threadStatus.thread_count;
 
+    if (CBOS_threadStatus.current_thread == 0)
+    {
+        CBOS_threadStatus.current_thread = 1;
+    }
 
-	__set_PSP((uint32_t)(threadArr[threadIndex]->stackPointer));
+    //Finally, set the PSP for the new thread
+    __set_PSP((uint32_t)CBOS_threadStatus.threadInfo[CBOS_threadStatus.current_thread].stackPtr_address);
 }

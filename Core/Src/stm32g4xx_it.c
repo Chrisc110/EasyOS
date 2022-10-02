@@ -179,7 +179,7 @@ void PendSV_Handler(void)
 	        "                                       \n"
 	        "       msr psp, r0                     \n"
 	        "                                       \n"
-	        "       bl setNewPSP           			\n"
+	        "       bl set_PSP_new_stackPtr           			\n"
 	    	"                                       \n"
 	        "		mov LR, #0xFFFFFFFD				\n"
 	    	"       mrs r0, psp                     \n"

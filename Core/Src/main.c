@@ -68,9 +68,9 @@ PUTCHAR_PROTOTYPE
   return ch;
 }
 
-void thread1(void *);
-void thread2(void *);
-void thread3(void *);
+void thread1();
+void thread2();
+void thread3();
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -111,17 +111,27 @@ int main(void)
   MX_LPUART1_UART_Init();
   /* USER CODE BEGIN 2 */
 
-  printf("About to start Kernel!\n\r");
+  printf("\n\n\nSystem initialized!\n\r");
 
+  /* set the PendSV interrupt priority to the lowest level 0xFF,
+       which makes it very negative. In the ARM Cortex, negative priorities are
+       high. It's frustrating. Think of them as "strong" priorities or something
 
-  osKernelInitialize();
+       The constant 0xE000ED20 is the location of the priority table for PendSV
+  */
+  *(uint32_t volatile *)0xE000ED20 |= (0xFFU << 16);
 
-  osThreadNew(thread1, NULL, NULL);
-  osThreadNew(thread2, NULL, NULL);
-  osThreadNew(thread3, NULL, NULL);
+  //These next three lines demonstrate how to find and set various stack pointers
+  uint32_t* MSR_Original = (uint32_t*)0;
+  uint32_t msrAddr = *MSR_Original;
+  CBOS_threadStatus.initial_MSP_addr = msrAddr;
 
+  //Creating threads and starting "Kernel"
+  CBOS_create_thread(thread1);
+  CBOS_create_thread(thread2);
+  CBOS_create_thread(thread3);
 
-  osKernelStart();
+  CBOS_kernel_start();
 
   /* USER CODE END 2 */
 
@@ -271,25 +281,48 @@ static void MX_GPIO_Init(void)
 
 /* USER CODE BEGIN 4 */
 
-void thread1(void* args) {
-    while (1) {
-        printf("thread1\n\r");
-        //contextSwitch();
+void thread1()
+{
+    while(1)
+    {
+        printf("Thread 1 is running\n\r");
+        //Trigger the PendSV interrupt
+            volatile uint32_t *icsr = (void*)0xE000ED04; //Interrupt Control/Status Vector
+            *icsr = 0x1<<28; //tell the chip to do the pendsv by writing 1 to the PDNSVSET bit
+
+            //flush things
+                __asm("isb"); //This just prevents other things in the pipeline from running before we return
+                printf("Thread 1 part 2 is running\n\r");
     }
 }
 
-void thread2(void* args) {
-    while (1) {
-        printf("thread2\n\r");
-        contextSwitch();
+void thread2()
+{
+    while(1)
+    {
+        printf("Thread 2, the cool thread is running!\n\r");
+        //Trigger the PendSV interrupt
+            volatile uint32_t *icsr = (void*)0xE000ED04; //Interrupt Control/Status Vector
+            *icsr = 0x1<<28; //tell the chip to do the pendsv by writing 1 to the PDNSVSET bit
+
+            //flush things
+                __asm("isb"); //This just prevents other things in the pipeline from running before we return
+                printf("Thread 2, the cool thread part 2 is running!\n\r");
     }
 }
 
-void thread3(void* args) {
-    while (1) {
-        printf("thread3\n\r");
-        contextSwitch();
+void thread3()
+{
+    while(1)
+    {
+        printf("Thread 3, the cool thread is running!\n\r");
+        //Trigger the PendSV interrupt
+            volatile uint32_t *icsr = (void*)0xE000ED04; //Interrupt Control/Status Vector
+            *icsr = 0x1<<28; //tell the chip to do the pendsv by writing 1 to the PDNSVSET bit
 
+            //flush things
+                __asm("isb"); //This just prevents other things in the pipeline from running before we return
+                printf("Thread 3, the cool thread part 2 is running!\n\r");
     }
 }
 
