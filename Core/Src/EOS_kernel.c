@@ -10,16 +10,3 @@ static uint8_t eHeap[HEAP_SIZE];
 
 uint8_t numThreads;
 
-osStatus_t osKernelInitialize(void) {
-
-//    memset(eHepa, HEAP_INITIAL, HEAP_SIZE);
-
-    return osOK;
-
-}
-
-osStatus_t osKernelStart(void) {
-
-    return osOK;
-
-}

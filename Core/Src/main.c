@@ -24,12 +24,9 @@
 /* USER CODE BEGIN Includes */
 #include "cmsis_os2.h"
 #include "stm32g4xx_it.h"
-<<<<<<< HEAD
 #include <string.h>
 #include "EOS_thread.h"
-=======
 #include <stdio.h>
->>>>>>> main
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -73,6 +70,7 @@ PUTCHAR_PROTOTYPE
 
 void thread1(void *);
 void thread2(void *);
+void thread3(void *);
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -90,7 +88,6 @@ int _write(int fd, char* ptr, int len) {
 int main(void)
 {
   /* USER CODE BEGIN 1 */
-
   /* USER CODE END 1 */
 
   /* MCU Configuration--------------------------------------------------------*/
@@ -114,13 +111,15 @@ int main(void)
   MX_LPUART1_UART_Init();
   /* USER CODE BEGIN 2 */
 
-  printf("About to start Kernel!");
+  printf("About to start Kernel!\n\r");
 
 
   osKernelInitialize();
 
   osThreadNew(thread1, NULL, NULL);
   osThreadNew(thread2, NULL, NULL);
+  osThreadNew(thread3, NULL, NULL);
+
 
   osKernelStart();
 
@@ -274,25 +273,23 @@ static void MX_GPIO_Init(void)
 
 void thread1(void* args) {
     while (1) {
-<<<<<<< HEAD
-        HAL_UART_Transmit(&hlpuart1, (uint8_t*)msg, strlen(msg), HAL_MAX_DELAY);
-        contextSwitch();
-=======
         printf("thread1\n\r");
-        PendSV_Handler();
->>>>>>> main
+        //contextSwitch();
     }
 }
 
 void thread2(void* args) {
     while (1) {
-<<<<<<< HEAD
-        HAL_UART_Transmit(&hlpuart1, (uint8_t*)msg, strlen(msg), HAL_MAX_DELAY);
-        contextSwitch();
-=======
         printf("thread2\n\r");
-        PendSV_Handler();
->>>>>>> main
+        contextSwitch();
+    }
+}
+
+void thread3(void* args) {
+    while (1) {
+        printf("thread3\n\r");
+        contextSwitch();
+
     }
 }
 

@@ -5,9 +5,10 @@ eTCB *threadArr[10];
 uint32_t * initMSP;
 uint8_t threadCount = 0;
 uint8_t threadIndex = 0;
+uint8_t counter = 0;
 
-static int easyHeap[2000];
-uint32_t heapIndex = 2000-1;
+static int easyHeap[5000];
+uint32_t heapIndex = 5000-1;
 
 void contextSwitch(void)
 {
@@ -30,7 +31,7 @@ osThreadId_t osThreadNew (osThreadFunc_t func, void *argument, const osThreadAtt
 	newThread->stackPointer = (uint32_t*)&easyHeap[heapIndex];
 	heapIndex -= THREAD_STACK_SIZE;
 
-	*(newThread->stackPointer) = (1<<24);
+	*(newThread->stackPointer) = 1<<24;
 	(newThread->stackPointer)--;
 
 	*(newThread->stackPointer) = (uint32_t)(func);
@@ -77,32 +78,44 @@ osThreadId_t osThreadNew (osThreadFunc_t func, void *argument, const osThreadAtt
 
 	*newThread->stackPointer = 0x4;
 
+
 	return NULL;
 }
 
-osStatus_t osKernelInitialize (void)
-{
-	*(uint32_t volatile *)0xE000ED20 |= (0xFFU << 16);
+osStatus_t osKernelInitialize(void) {
 
-	initMSP = *(uint32_t*)0;
+//    memset(eHepa, HEAP_INITIAL, HEAP_SIZE);
+    *(uint32_t volatile *)0xE000ED20 |= (0xFFU << 16);
 
-	return 0;
+    initMSP = (uint32_t*)0;
+
+    return osOK;
+
 }
 
-osStatus_t osKernelStart (void)
-{
-	__set_CONTROL(1<<1);
-	__set_PSP((uint32_t)(threadArr[threadIndex]->stackPointer) + 17*4);
+osStatus_t osKernelStart(void) {
 
-	contextSwitch();
+    __set_CONTROL(1<<1);
+    __set_PSP((uint32_t)(threadArr[threadIndex]->stackPointer) + 14*4);
 
+    contextSwitch();
 
-	return 0;
+    return osOK;
+
 }
 
 void setNewPSP(void){
-	threadArr[threadIndex]->stackPointer = __get_PSP();
+	threadArr[threadIndex]->stackPointer = (uint32_t*)__get_PSP();
 
 	threadIndex = (threadIndex + 1) % threadCount;
+	if (threadIndex == 0)
+	{
+	    threadIndex = 1;
+	}
+	printf("thread count: %i\n\r", threadIndex);
+	printf("Counter: %i\n\r", counter);
+	counter++;
+
 
 	__set_PSP((uint32_t)(threadArr[threadIndex]->stackPointer));
+}

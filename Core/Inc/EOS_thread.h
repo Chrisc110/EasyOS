@@ -2,7 +2,7 @@
 #define EOS_THREAD_H_
 
 #include <stdint.h>
-#include "cmsis_gcc.h"
+#include "stm32g4xx.h"
 
 #define THREAD_STACK_SIZE 512
 

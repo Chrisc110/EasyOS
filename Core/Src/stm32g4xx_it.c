@@ -171,7 +171,6 @@ void DebugMon_Handler(void)
 void PendSV_Handler(void)
 {
   /* USER CODE BEGIN PendSV_IRQn 0 */
-<<<<<<< HEAD
 	__ASM volatile
 	        (
 	        "       mrs r0, psp                     \n"
@@ -191,11 +190,6 @@ void PendSV_Handler(void)
 	        "                                       \n"
 	        "       bx lr                           \n"
 	    );
-=======
-  __ASM volatile (
-          "                 \n"
-  );
->>>>>>> main
   /* USER CODE END PendSV_IRQn 0 */
   /* USER CODE BEGIN PendSV_IRQn 1 */
 
@@ -208,7 +202,6 @@ void PendSV_Handler(void)
 void SysTick_Handler(void)
 {
   /* USER CODE BEGIN SysTick_IRQn 0 */
-
   /* USER CODE END SysTick_IRQn 0 */
   HAL_IncTick();
   /* USER CODE BEGIN SysTick_IRQn 1 */
