@@ -55,6 +55,7 @@ static void MX_LPUART1_UART_Init(void);
 /* USER CODE BEGIN PFP */
 void thread1(void *);
 void thread2(void *);
+void thread3(void *);
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -100,6 +101,7 @@ int main(void)
 
   osThreadNew(thread1, NULL, NULL);
   osThreadNew(thread2, NULL, NULL);
+  osThreadNew(thread3, NULL, NULL);
 
   osKernelStart();
 
@@ -253,15 +255,28 @@ static void MX_GPIO_Init(void)
 
 void thread1(void* args) {
     while (1) {
-        printf("thread1\n\r");
-        PendSV_Handler();
+        printf("thread 1\r\n");
+        *((uint32_t*)0xE000ED04) = 1 << 28;
+
+        __ASM("isb");
     }
 }
 
 void thread2(void* args) {
     while (1) {
-        printf("thread2\n\r");
-        PendSV_Handler();
+        printf("thread 2\r\n");
+        *((uint32_t*)0xE000ED04) = 1 << 28;
+
+        __ASM("isb");
+    }
+}
+
+void thread3(void* args) {
+    while (1) {
+        printf("thread 3\r\n");
+        *((uint32_t*)0xE000ED04) = 1 << 28;
+
+        __ASM("isb");
     }
 }
 

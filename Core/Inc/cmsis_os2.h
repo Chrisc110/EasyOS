@@ -50,6 +50,8 @@ extern "C"
 
 //  ==== Enumerations, structures, defines ====
 
+void trigger_pendsv(void);
+
 /// Version information.
 typedef struct {
   uint32_t                       api;   ///< API version (major.minor.rev: mmnnnrrrr dec).

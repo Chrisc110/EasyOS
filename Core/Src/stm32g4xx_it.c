@@ -23,6 +23,7 @@
 #include "stm32g4xx_it.h"
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+#include "EOS_kernel.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -172,7 +173,23 @@ void PendSV_Handler(void)
 {
   /* USER CODE BEGIN PendSV_IRQn 0 */
   __ASM volatile (
-          "                 \n"
+          "  MRS r0, PSP            \n"
+          "                 		\n"
+          "  STMDB r0!, {r4-r11}    \n"
+          "                 		\n"
+          "  MSR PSP, r0            \n"
+          "                 		\n"
+          "  BL eSwapThread         \n"
+          "                 		\n"
+          "  MOV LR, #0xFFFFFFFD    \n"
+          "                 		\n"
+          "  MRS r0, PSP            \n"
+          "                 		\n"
+          "  LDMIA r0!, {r4-r11}    \n"
+          "                         \n"
+          "  MSR PSP, r0            \n"
+          "                 		\n"
+          "  BX LR            		"
   );
   /* USER CODE END PendSV_IRQn 0 */
   /* USER CODE BEGIN PendSV_IRQn 1 */
